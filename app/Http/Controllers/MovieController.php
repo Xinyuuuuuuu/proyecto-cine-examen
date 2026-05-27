@@ -23,7 +23,7 @@ class MovieController extends Controller
         return view('movies.create', compact('directors', 'actors'));
     }
 
-    //store con PIVOT
+    //store con PIVOT ARRAY
     public function store(Request $request)
     {
         $request->validate([
@@ -33,6 +33,7 @@ class MovieController extends Controller
             'actors' => 'nullable|array', //guarda el id (Blade con: value="{{ $actor->id }}")
             'actors.*' => 'exists:actors,id', //cada elemento del array existe
             'roles' => 'nullable|array',
+            
         ]);
 
         $movie = Movie::create([
@@ -87,7 +88,7 @@ class MovieController extends Controller
         $movie = Movie::find($id);
 
         if (!$movie) {
-            return redirect('/movie')->with('error', 'Película no encontrada');
+            return redirect('/movies')->with('error', 'Película no encontrada');
         }
 
         $movie->update([
@@ -98,23 +99,118 @@ class MovieController extends Controller
 
         //-----------Update de tabla PIVOT actor_movie-----//
 
-        $datosActores=[];
+        $datosActores = []; //guardará el id de los actores y sus roles para esta película
+        // actor_id => ['role' => valor]
 
-        if ($request->has('actors')){
-            foreach ($request->actors as $actorId) {
+        if ($request->has('actors')) {
+            foreach ($request->actors as $actorId) { //$request->input('actors', []) //devuelve array vacio si no se marca ninguna ctor
+                //nullable pivot attribute
                 $role = $request->input('roles.' . $actorId);
 
-                if($role == null || $role ==''){
+                if ($role == null || $role == '') {
                     $role = 'Sin especificar';
                 }
 
-                $datosActores[$actorId]=['role'=>$role]; //[$actorId] es la clave para sync()
-            }          
+                $datosActores[$actorId] = ['role' => $role]; //[$actorId] es la clave para sync()
+                // actor_id => ['campo_pivot' => valor],
+            }
         }
 
+        //sincroniza el metodo actors() del modelo Movie
         $movie->actors()->sync($datosActores); // actor_id => ['campo_pivot' => valor],
-                                               //sync() borra las anteriores y las deja como el array que le paso
-        return redirect ('/movies')->with('success', 'Película actualizada correctamente.');
+        //sync() borra las anteriores y las deja como el array que le paso
 
+
+        //Si solo quiero añadir una realción nueva sin tocar las demás
+        //$movie->actors()->attach($actorId, ['role' => 'Cooper']);
+
+
+        return redirect('/movies')->with('success', 'Película actualizada correctamente.');
+    }
+
+    public function search(Request $request)
+    {
+        // Recogemos filtros del formulario
+        $texto = $request->input('texto', '');
+        $directorId = $request->input('director_id', '');
+        $actorIds = $request->input('actors', []);
+        $role = $request->input('role', '');
+        $years = $request->input('years', []);
+
+        // Datos para rellenar selects y checkboxes
+        $directors = Director::all();
+        $actors = Actor::all();
+
+        // Query base con relaciones cargadas de Movie
+        $query = Movie::with(['director', 'actors']);
+
+        // Filtro por texto en título
+        if ($texto != '') {
+            $query->where('title', 'like', '%' . $texto . '%');
+        }
+
+        // Filtro 1:N por director
+        if ($directorId != '') {
+            $query->where('director_id', '=', $directorId);
+        }
+
+        // Filtro por array de años
+        if (!empty($years)) {
+            $query->whereIn('year', $years);
+        }
+
+        // Filtro N:M por actores seleccionados
+        if (!empty($actorIds)) {
+            $query->whereHas('actors', function ($q) use ($actorIds) {
+                $q->whereIn('actors.id', $actorIds);
+            });
+        }
+
+        // Filtro por atributo pivot role
+        if ($role != '') {
+            $query->whereHas('actors', function ($q) use ($role) {
+                $q->where('actor_movie.role', 'like', '%' . $role . '%');
+            });
+        }
+
+        // Ejecutar consulta
+        $movies = $query->get();
+
+        // Total
+        $totalMovies = $movies->count();
+
+        // Array de años disponibles generado desde la BD
+        $availableYears = Movie::select('year')
+            ->distinct()
+            ->orderBy('year', 'asc')
+            ->pluck('year')
+            ->toArray();
+
+        return view('movies.search', compact(
+            'movies',
+            'totalMovies',
+            'directors',
+            'actors',
+            'availableYears',
+            'texto',
+            'directorId',
+            'actorIds',
+            'role',
+            'years'
+        ));
+    }
+
+    //delete
+
+    public function delete ($id){
+        $movie=Movie::find($id);
+
+        if (!$movie) {
+            return redirect('/movies')->with('error', 'No existe esta Película');;
+        }
+        
+        $movie->delete();
+
+        return redirect ('/movies')->with('success','"'.$movie->title. '" ha sido borrada ');
     }
 }

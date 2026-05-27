@@ -13,6 +13,13 @@ Route::get('/movies', [MovieController::class, 'index']);
 Route::get('/movies/create', [MovieController::class, 'create']);
 Route::post('/movies', [MovieController::class, 'store']);
 
+//Buscar
+Route::get('/movies/search', [MovieController::class, 'search']);
+
 //Editar
 Route::get('/movies/{id}/edit', [MovieController::class, 'edit']);
 Route::post('/movies/{id}/update', [MovieController::class, 'update']);
+
+//Delete
+
+Route::post('/movies/{id}/delete', [MovieController::class, 'delete']);

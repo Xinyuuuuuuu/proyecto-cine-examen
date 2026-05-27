@@ -42,31 +42,31 @@
         @if ($actors->isEmpty())
             <p>No hay actores disponibles</p>
         @else
-        @foreach ($actors as $actor)
+            @foreach ($actors as $actor)
 
-        {{-- Busca si el actor del bucle actual ya está asociado a la película --}}
-        @php  
-            $actorActual = $movie->actors->firstWhere('id',$actor->id);  
-        @endphp
+                {{-- Busca si el actor del bucle actual ya está asociado a la película --}}
+                @php  
+                    $actorActual = $movie->actors->firstWhere('id',$actor->id);  
+                @endphp
 
-        <div>
-            <label>
-                <input type="checkbox"
-                       name="actors[]" {{-- Envia un array de actores  --}}
-                       value="{{ $actor->id }}"{{-- Enviale el id al array --}}
-                       {{-- Comprueba si 'actors' es array y si el id del actor actual está dentro de los actores seleccionados antes  --}}
-                       @if ((is_array(old('actors')) && in_array($actor->id, old('actors'))) || (!old('actors')&& $actorActual)) checked @endif>
-                       {{-- @if($movie->actors->contains($actor->id)) checked @endif> --}}
+                <div>
+                    <label>
+                        <input type="checkbox"
+                            name="actors[]" {{-- Envia un array de actores  --}}
+                            value="{{ $actor->id }}"{{-- Enviale el id al array --}}
+                            {{-- Comprueba si 'actors' es array y si el id del actor actual está dentro de los actores seleccionados antes  --}}
+                            @if ((is_array(old('actors')) && in_array($actor->id, old('actors'))) || (!old('actors')&& $actorActual)) checked @endif>
+                            {{-- @if($movie->actors->contains($actor->id)) checked @endif> --}}
 
-                {{ $actor->name }}
-            </label>
+                        {{ $actor->name }}
+                    </label>
 
-            <input type="text"
-                   name="roles[{{ $actor->id }}]"{{-- roles[1] --}}
-                   placeholder="Rol en la película"
-                   value="{{ old('roles.' . $actor->id, $actorActual ? $actorActual->pivot->role : '') }}">{{-- recupera roles[1] --}}
-        </div>        
-        @endforeach
+                    <input type="text"
+                        name="roles[{{ $actor->id }}]"{{-- roles[1] --}}
+                        placeholder="Rol en la película"
+                        value="{{ old('roles.' . $actor->id, $actorActual ? $actorActual->pivot->role : '') }}">{{-- recupera roles[1] --}}
+                </div>        
+            @endforeach
         @endif
         
         <button type="submit">Actualizar</button>

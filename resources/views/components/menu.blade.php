@@ -9,6 +9,7 @@
     <a href="{{ url('/directors') }}">Directores</a>
     <a href="{{ url('/actors') }}">Actores</a>
     
+    <a href="{{ url('/movies/search') }}">Buscador avanzado</a>
 </nav>
 
 <hr>

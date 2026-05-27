@@ -38,6 +38,13 @@
                 @endif
 
                 <a href="{{ url('/movies/'.$movie->id.'/edit') }}" >Editar película</a>
+                <br>
+                <form action="{{ url('/movies/' . $movie->id . '/delete') }}" method="post">
+                    @csrf
+                    <button type="submit" onclick="return confirm('¿Seguro que quieres borrar esta película?')">
+                        Borrar película
+                    </button>
+                </form><br>
             </article>
         @endforeach
     @endif
